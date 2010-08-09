@@ -85,8 +85,8 @@
         },
         linkText: function(txt) {
           // link any HTTP/HTTPS links, link hashtags to search
-          return txt.replace(/(http[s]?\:\/\/[\w\.\/\?\=\&\-]+)/, "<a href='$1'>$1</a>")
-                  .replace(/\#(\w+)/, '<a href="http://search.twitter.com/search?q=$1">#$1</a>');
+          return txt.replace(/(http[s]?\:\/\/[\w\.\/\?\=\&\-]+)/g, "<a href='$1'>$1</a>")
+                  .replace(/\#(\w+)/g, '<a href="http://search.twitter.com/search?q=$1">#$1</a>');
         },
         timeAgo: function(timeString) {
           var currentDate = new Date,
@@ -106,7 +106,7 @@
             user = item.user;
             lineClass = i == this.currentOffset ? "first " : "";
             markup += '<div class="' + lineClass + 'tweet">'
-                    + '<span class="author"><img src="' + user.profile_image_url.replace(/_normal\.(\w+)/, "_mini.$1") + '"/>@' + user.screen_name + ':</span>'
+                    + '<span class="author"><img src="' + user.profile_image_url.replace(/_normal\.(\w+)$/, "_mini.$1") + '"/>@' + user.screen_name + ':</span>'
                     + '<span class="text">' + this.linkText(item.text) + '</span>'
                     + '<div class="time">' + this.timeAgo(item.created_at) + '</div></div>';
           }
