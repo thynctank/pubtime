@@ -6,64 +6,153 @@
     <style type="text/css" media="screen">
       body {background-color: #CE3C80;color:#fff; font-family: arial,helvetica,clean,sans-serif;}
       a, a:visited, a:active {color: #F1DD6D;}
-      h1 {width: 600px; margin: 20px auto 10px; text-shadow: 2px 3px 5px #CCCCCC; font-family: cursive;}
+      
+      #content {width: 600px; margin: 20px auto;}
+      
+      h1 {margin-bottom: 10px; text-shadow: 2px 3px 5px #CCCCCC; font-family: cursive;}
       #publicTweets {
         background-color: #CADEA0; color: #668D47;
-        width: 600px;
         margin: 0 auto;
         border: 5px solid #F1DD6D;
         -moz-border-radius:10px;-webkit-border-radius:10px;-khtml-border-radius:10px;border-radius:10px;
       }
-      #publicTweets .tweet {margin: 10px; line-height: 1.5em;}
+      #publicTweets .tweet {margin: 10px 10px 0; line-height: 1.5em; border-top: 2px solid #F1DD6D; padding-top: 8px;}
+      #publicTweets .first.tweet {border-top: none; padding-top: 0;}
       #publicTweets a, 
       #publicTweets a:visited,
       #publicTweets a:active {color: #CE3C80;}
-      #publicTweets .author {font-style: italic;}
+      #publicTweets .author {font-style: italic; margin-right: 10px; line-height: 24px; height: 24px; font-weight: bold;}
+      #publicTweets .author img {height: 24px; width: 24px; float: left; margin-right: 5px;}
+      #publicTweets .time {text-align: right; font-size: .75em; font-weight: bold;}
+      
+      #publicControls {display: none; text-align: right; margin-bottom: 1em;}
+      #publicControls a {margin: 1em;}
     </style>
   </head>
   <body>
-    <h1>Publick Tweetes</h1>
-    <div id="publicTweets">
-      <div class="tweet">
-        <span class="author">@thynctank</span>
-        <span class="text">Stuff I said</span>
+    <div id="content">
+      <h1>Publick Tweetes</h1>
+      <div id="publicControls">
+        <a class="refresh" href="#">Refresh</a>
+        <a class="previous" href="#">Previous</a>
+        <a class="next" href="#">Next</a>
       </div>
-      <div class="tweet">
-        <span class="author">@thynctank</span>
-        <span class="text">Stuff I said</span>
-      </div>
-      <div class="tweet">
-        <span class="author">@thynctank</span>
-        <span class="text">Stuff I said</span>
-      </div>
-      <div class="tweet">
-        <span class="author">@thynctank</span>
-        <span class="text">Stuff I said</span>
-      </div>
-      <div class="tweet">
-        <span class="author">@thynctank</span>
-        <span class="text">Stuff I said</span>
-      </div>
+      <div id="publicTweets"></div>
     </div>
     <script src="http://platform.twitter.com/anywhere.js?id=G3e3mfrVPqb2Q0Au1m4oTA&v=1" type="text/javascript" charset="utf-8"></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript" charset="utf-8"></script>
     <script type="text/javascript" charset="utf-8">
-      // @Anywhere stuff, for hovercards
-      // twttr.anywhere(function(t) {
-      //   t.hovercards();
-      // });
+      function Publick(container, controls) {
+        this.container = container;
+        this.controls = controls;
+        var p = this,
+            init = function() {
+          p.init.apply(p);
+        };
+        setTimeout(init, 500);
+      }
+      Publick.prototype = {
+        currentOffset: 0,
+        currentTimeline: [],
+        container: null,
+        controls: null,
+        refresh: function() {
+          // func to fetch public timeline from
+          // http://api.twitter.com/1/statuses/public_timeline.json
+          this.container.html('<div class="loading">Loading...</div>');
+          this.controls.hide();
+          
+          var p = this;
+          $.getJSON("http://api.twitter.com/1/statuses/public_timeline.json?include_entities=false&callback=?", function(r) {
+            p.currentTimeline = r;
+            p.currentOffset = 0;
+            p.renderTimeline();
+          });
+        },
+        // load next 5 into #publicTweets
+        nextFive: function() {
+          if(this.currentOffset <= (this.currentTimeline.length - 5)) {
+            this.currentOffset += 5;
+            this.renderTimeline();
+          }
+        },
+        // load prev 5 into #publicTweets
+        prevFive: function() {
+          if(this.currentOffset > 0) {
+            this.currentOffset -= 5;
+            this.renderTimeline();
+          }
+        },
+        linkText: function(txt) {
+          // link any HTTP/HTTPS links, link hashtags to search
+          return txt.replace(/(http[s]?\:\/\/[\w\.\/\?\=\&\-]+)/, "<a href='$1'>$1</a>")
+                  .replace(/\#(\w+)/, '<a href="http://search.twitter.com/search?q=$1">#$1</a>');
+        },
+        timeAgo: function(timeString) {
+          var currentDate = new Date,
+              theDate = new Date;
+          // use Date.js to massage timeString into "X minuts/seconds ago"
+          return "X minutes, Y seconds ago";
+        },
+        // render data from currentTimeline into DOM
+        renderTimeline: function() {
+          var markup = "",
+              item,
+              user,
+              lineClass;
+            
+          for(i = this.currentOffset, j = this.currentOffset + 5; i < j; i++) {
+            item = this.currentTimeline[i];
+            user = item.user;
+            lineClass = i == this.currentOffset ? "first " : "";
+            markup += '<div class="' + lineClass + 'tweet">'
+                    + '<span class="author"><img src="' + user.profile_image_url.replace(/_normal\.(\w+)/, "_mini.$1") + '"/>@' + user.screen_name + ':</span>'
+                    + '<span class="text">' + this.linkText(item.text) + '</span>'
+                    + '<div class="time">' + this.timeAgo(item.created_at) + '</div></div>';
+          }
+          this.container.html(markup);
+          this.controls.show();
+          // @Anywhere stuff, for hovercards
+          twttr.anywhere(function(t) {
+            t.hovercards();
+          });
+        },
+        listenForUpdate: function() {
+          var p = this,
+              refresh = p.refresh;
+          this.controls.find(".refresh").click(function() {
+            p.refresh();
+            return false;
+          });
+        },
+        listenForNext: function(){
+          var p = this;
+          this.controls.find(".next").click(function() {
+            p.nextFive();
+            return false;
+          });
+        },
+        listenForPrev: function(){
+          var p = this;
+          this.controls.find(".previous").click(function() {
+            p.prevFive();
+            return false;
+          });
+        },
+        init: function() {
+          // add listener for update button
+          this.listenForUpdate();
+          // add listeners to controls for loading prev 5/next 5
+          this.listenForNext();
+          this.listenForPrev();
+          // add listener for keybd input (arrows L/R + U/D) for loading prev/next
+          // this.listenForKeys();
+          this.refresh();
+        }
+      };
 
-      // func to fetch public timeline from
-      // http://api.twitter.com/1/statuses/public_timeline.json
-      $.getJSON("http://api.twitter.com/1/statuses/public_timeline.json?callback=?", function(r) {
-        console.log(r);
-      });
-      
-      // load 5 into #publicTweets
-
-      // add listener for update button
-      // add listeners to controls for loading prev 5/next 5
-      // add listener for keybd input (arrows L/R + U/D) for loading prev/next
+      var p = new Publick($("#publicTweets"), $("#publicControls"));
+      // TODO test in IE
     </script>
   </body>
 </html>
