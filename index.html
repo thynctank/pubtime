@@ -94,6 +94,21 @@
           // use Date.js to massage timeString into "X minuts/seconds ago"
           return "X minutes, Y seconds ago";
         },
+        showControls: function() {
+          var prev = this.controls.find(".previous"),
+              next = this.controls.find(".next");
+          if(this.currentOffset == 0)
+            prev.hide();
+          else
+            prev.show();
+            
+          if(this.currentOffset == (this.currentTimeline.length - 5))
+            next.hide();
+          else
+            next.show();
+          
+          this.controls.show();
+        },
         // render data from currentTimeline into DOM
         renderTimeline: function() {
           var markup = "",
@@ -111,7 +126,8 @@
                     + '<div class="time">' + this.timeAgo(item.created_at) + '</div></div>';
           }
           this.container.html(markup);
-          this.controls.show();
+
+          this.showControls();
           // @Anywhere stuff, for hovercards
           twttr.anywhere(function(t) {
             t.hovercards();
