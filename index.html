@@ -71,7 +71,7 @@
         },
         // load next 5 into #publicTweets
         nextFive: function() {
-          if(this.currentOffset <= (this.currentTimeline.length - 5)) {
+          if(this.currentOffset < (this.currentTimeline.length - 5)) {
             this.currentOffset += 5;
             this.renderTimeline();
           }
