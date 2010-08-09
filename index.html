@@ -29,18 +29,18 @@
       #publicControls {display: none; text-align: right; margin-bottom: 1em;}
       #publicControls a {margin: 1em;}
     </style>
+    <script src="http://platform.twitter.com/anywhere.js?id=G3e3mfrVPqb2Q0Au1m4oTA&v=1" type="text/javascript" charset="utf-8"></script>
   </head>
   <body>
     <div id="content">
       <h1>Publick Tweetes</h1>
       <div id="publicControls">
-        <a class="refresh" href="#">Refresh</a>
-        <a class="previous" href="#">Previous</a>
-        <a class="next" href="#">Next</a>
+        <a class="refresh" href="#" accesskey="r">Refresh</a>
+        <a class="previous" href="#" accesskey="p">&lt; Previous</a>
+        <a class="next" href="#" accesskey="n">Next &gt;</a>
       </div>
       <div id="publicTweets"></div>
     </div>
-    <script src="http://platform.twitter.com/anywhere.js?id=G3e3mfrVPqb2Q0Au1m4oTA&v=1" type="text/javascript" charset="utf-8"></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript" charset="utf-8"></script>
     <script type="text/javascript" charset="utf-8">
       function Publick(container, controls) {
@@ -86,14 +86,8 @@
         },
         linkText: function(txt) {
           // link any HTTP/HTTPS links, link hashtags to search
-          return txt.replace(/(http[s]?\:\/\/[\w\.\/\?\=\&\-]+)/g, "<a href='$1'>$1</a>")
+          return txt.replace(/(http[s]?\:\/\/[\w\.\/\?\=\&\-\%]+)/g, "<a href='$1'>$1</a>")
                   .replace(/\#(\w+)/g, '<a href="http://search.twitter.com/search?q=$1">#$1</a>');
-        },
-        timeAgo: function(timeString) {
-          var currentDate = new Date,
-              theDate = new Date;
-          // use Date.js to massage timeString into "X minuts/seconds ago"
-          return "X minutes, Y seconds ago";
         },
         showControls: function() {
           var prev = this.controls.find(".previous"),
@@ -124,7 +118,7 @@
             markup += '<div class="' + lineClass + 'tweet">'
                     + '<span class="author"><img src="' + user.profile_image_url.replace(/_normal\.(\w+)$/, "_mini.$1") + '"/>@' + user.screen_name + ':</span>'
                     + '<span class="text">' + this.linkText(item.text) + '</span>'
-                    + '<div class="time">' + this.timeAgo(item.created_at) + '</div></div>';
+                    + '<div class="time">' + item.created_at + '</div></div>';
           }
           this.container.html(markup);
 
@@ -156,14 +150,37 @@
             return false;
           });
         },
+        listenForKeys: function() {
+          var p = this;
+          $(document).keyup(function(evt) {
+            switch(evt.which) {
+              // rt arrow
+              case 39:
+              // down arrow
+              case 40:
+                p.nextFive();
+                break;
+              // lt arrow
+              case 37:
+              // up arrow
+              case 38:
+                p.prevFive();
+                break;
+              // r
+              case 82:
+                p.refresh();
+                break;
+            }
+          });
+        },
         init: function() {
           // add listener for update button
           this.listenForUpdate();
           // add listeners to controls for loading prev 5/next 5
           this.listenForNext();
           this.listenForPrev();
-          // TODO add listener for keybd input (arrows L/R + U/D) for loading prev/next
-          // this.listenForKeys();
+          // add listener for keybd input (arrows L/R + U/D) for loading prev/next
+          this.listenForKeys();
           this.refresh();
         }
       };
